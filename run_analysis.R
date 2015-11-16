@@ -5,16 +5,36 @@
 ## 4. Appropriately labels the data set with descriptive activity names.
 ## 5. Creates a second, independent tidy data set with the average of each variable for each activity and each subject.
 
-if (!require("data.table")) {
-  install.packages("data.table")
+myinstall <- function(lib, ...) {
+  if (!require(lib, ...)) {
+    install.packages(lib)
+    require(lib)
+  }
 }
 
-if (!require("reshape2")) {
-  install.packages("reshape2")
+packages <- c("data.table", "reshape2")
+sapply(packages, myinstall, character.only = TRUE, quietly = TRUE)
+
+path <- getwd()
+if(!file.exists(path)) {
+  dir.create(path)
 }
 
-require("data.table")
-require("reshape2")
+# Check to see if the zip file is there. If it is then don't download it.
+project <- file.path(path, "UCI HAR Dataset")
+if(!file.exists(project)) {
+  #download the zip file
+  project_zip <- file.path(path, "project.zip")
+  if(!file.exists(project_zip)) {
+    url <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip" 
+    download.file(url, project_zip)
+  }
+  
+  #unzip file with the RAR Extractor Free in macos
+  executable <- "/Applications/RAR\ Extractor\ Free.app/Contents/MacOS/RAR\ Extractor\ Free"
+  cmd <- paste(paste0("\"", executable, "\""), paste0("\"", project_zip, "\""))
+  system(cmd)
+}
 
 # Load: activity labels
 activity_labels <- read.table("./UCI HAR Dataset/activity_labels.txt")[,2]
@@ -72,4 +92,5 @@ melt_data      = melt(data, id = id_labels, measure.vars = data_labels)
 # Apply mean function to dataset using dcast function
 tidy_data   = dcast(melt_data, subject + Activity_Label ~ variable, mean)
 
+#write tidy data file
 write.table(tidy_data, file = "./tidy_data.txt")
